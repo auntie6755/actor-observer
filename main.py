@@ -26,6 +26,7 @@ def seed(manualseed):
     np.random.seed(manualseed)
     torch.manual_seed(manualseed)
     torch.cuda.manual_seed(manualseed)
+    print("=====seed: ", manualseed, "=====")
 
 
 best_top1 = 0
@@ -53,14 +54,14 @@ def main():
     global args, best_top1
     args = parse()
     if not args.no_logger:
-        tee.Tee(args.cache + '/log.txt')
+        tee.Tee(args.cache + '/log22.txt')
     print(vars(args))
     seed(args.manual_seed)
 
     model, criterion, optimizer = create_model(args)
     if args.resume:
         best_top1 = checkpoints.load(args, model, optimizer)
-    print(model)
+    # print(model)
     trainer = train.Trainer()
     loaders = get_dataset(args)
     train_loader = loaders[0]
@@ -74,8 +75,12 @@ def main():
         if args.distributed:
             trainer.train_sampler.set_epoch(epoch)
         scores = {}
+        print('=====Begin training=====')
         scores.update(trainer.train(train_loader, model, criterion, optimizer, epoch, args))
+        print('=====Begin testing=====')
         scores.update(validate(trainer, loaders, model, criterion, args, epoch))
+
+        # update: 在scores这个字典中加入一对key，value。当key相同时，新的value替换掉旧的。
 
         is_best = scores[args.metric] > best_top1
         best_top1 = max(scores[args.metric], best_top1)
